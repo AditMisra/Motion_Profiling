@@ -1,0 +1,13 @@
+package frc.robot.robotModes;
+
+import edu.wpi.first.wpilibj.command.CommandGroup;
+import frc.robot.commands.TeleDrive;
+
+public class Auto extends CommandGroup
+{
+	public Auto()
+	{
+        addParallel(new TeleDrive());
+    }
+	
+}
