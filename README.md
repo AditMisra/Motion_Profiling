@@ -3,7 +3,6 @@ A sample of "motion magic" source code used for FIRST Robotics programming.
 
 ### Overview of Motion Profiling-Specific Code ###
 [DriveTrain](https://github.com/AditMisra/Motion_Profiling/blob/master/src/main/java/frc/robot/subsystems/DriveTrain)
-
 The DriveTrain code runs the drive train subsystem of the robot. This sample allows the user to operate manual control of the drivebase `drive() method`,  move forward under a defined motion profile `moveForward()` method, and turn under a defined motion profile `turn()` method. For the motion profiled movements, the user enters either the intended distance in inches (straight line motion) or the intended rotation in degrees (turning). Upon initialization, the DriveTrain code initializes the motor controllers and the magnetic encoders, as well as the motion profiling parameters to be used throughout the game. The encoders are initialized and configured, and the motion profiling constants are imported. These constants include the gains (kP, kF, kI and kD constants, experimentally defined), the acceleration and cruise velocities (to serve as a maximum acceleration and speed in the motion profiles, experimentally defined), and the strength of the S-curve (the smoothness of the motion profile). 
 When the motion magic methods are called (imported from the `com.ctre.phoenix library`) these constants are used to calculate the motion curve (smoothed trapezoidal motion) and sent to the motor controllers. This calculation is done directly on the roboRio.
 
