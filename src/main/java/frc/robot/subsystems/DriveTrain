@@ -1,0 +1,127 @@
+/*----------------------------------------------------------------------------*/
+/* Copyright (c) 2017-2018 FIRST. All Rights Reserved.                        */
+/* Open Source Software - may be modified and shared by FRC teams. The code   */
+/* must be accompanied by the FIRST BSD license file in the root directory of */
+/* the project.                                                               */
+/*----------------------------------------------------------------------------*/
+
+package frc.robot.subsystems;
+
+import com.ctre.phoenix.motorcontrol.can.*;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
+
+import edu.wpi.first.wpilibj.SpeedControllerGroup;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+
+import frc.robot.RobotMap;
+import frc.robot.NumberConstants;
+import edu.wpi.first.wpilibj.command.Subsystem;
+
+public class DriveTrain extends Subsystem {
+  // Put methods for controlling this subsystem
+  // here. Call these from Commands.
+  public WPI_TalonSRX leftTalonFront;
+  public WPI_TalonSRX leftTalonRear;
+  public WPI_TalonSRX rightTalonFront;
+  public WPI_TalonSRX rightTalonRear; 
+
+  private SpeedControllerGroup leftSide,rightSide;
+  private DifferentialDrive robotDrive;
+
+   /** How much smoothing [0,8] to use during MotionMagic */
+	int _smoothing = 8;
+
+	/** save the last Point Of View / D-pad value */
+  int _pov = -1;
+  
+  public DriveTrain() {
+    leftTalonFront = new WPI_TalonSRX(RobotMap.LEFT_MOTOR_FRONT);
+    leftTalonRear = new WPI_TalonSRX(RobotMap.LEFT_MOTOR_REAR);
+    rightTalonFront = new WPI_TalonSRX(RobotMap.RIGHT_MOTOR_FRONT);
+    rightTalonRear = new WPI_TalonSRX(RobotMap.RIGHT_MOTOR_REAR);
+    leftSide = new SpeedControllerGroup(leftTalonFront, leftTalonRear);
+    rightSide = new SpeedControllerGroup(rightTalonFront, rightTalonRear);
+    robotDrive = new DifferentialDrive(leftSide, rightSide);
+    
+    //reseting and configuring motor controllers
+    leftTalonFront.configFactoryDefault();
+    rightTalonFront.configFactoryDefault();
+    //sensor source
+    leftTalonFront.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, NumberConstants.kPIDLoopIdx,
+    NumberConstants.kTimeoutMs);
+    rightTalonFront.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, NumberConstants.kPIDLoopIdx,
+    NumberConstants.kTimeoutMs);
+    //change depending on talon lights. Invert for green LED's when moving forward. Change phase
+    //to have positive increment when driving forward
+    leftTalonFront.setSensorPhase(true);
+    leftTalonFront.setInverted(false);
+    rightTalonFront.setSensorPhase(true);
+    rightTalonFront.setInverted(true);
+    //speed for frame periods to be as fast as periodic rate
+    leftTalonFront.setStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, 10, NumberConstants.kTimeoutMs);
+    leftTalonFront.setStatusFramePeriod(StatusFrameEnhanced.Status_10_MotionMagic, 10, NumberConstants.kTimeoutMs);
+    rightTalonFront.setStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, 10, NumberConstants.kTimeoutMs);
+    rightTalonFront.setStatusFramePeriod(StatusFrameEnhanced.Status_10_MotionMagic, 10, NumberConstants.kTimeoutMs);
+    //peak and nominal outputs(?)
+    leftTalonFront.configNominalOutputForward(0, NumberConstants.kTimeoutMs);
+    leftTalonFront.configNominalOutputReverse(0, NumberConstants.kTimeoutMs);
+    leftTalonFront.configPeakOutputForward(1, NumberConstants.kTimeoutMs);
+    leftTalonFront.configPeakOutputReverse(-1, NumberConstants.kTimeoutMs);
+    rightTalonFront.configNominalOutputForward(0, NumberConstants.kTimeoutMs);
+    rightTalonFront.configNominalOutputReverse(0, NumberConstants.kTimeoutMs);
+    rightTalonFront.configPeakOutputForward(1, NumberConstants.kTimeoutMs);
+    rightTalonFront.configPeakOutputReverse(-1, NumberConstants.kTimeoutMs);
+
+    //setting motion magic gains
+    leftTalonFront.selectProfileSlot(NumberConstants.kSlotIdx, NumberConstants.kPIDLoopIdx);
+    leftTalonFront.config_kF(NumberConstants.kSlotIdx, NumberConstants.kGains.kF, NumberConstants.kTimeoutMs);
+    leftTalonFront.config_kP(NumberConstants.kSlotIdx, NumberConstants.kGains.kP, NumberConstants.kTimeoutMs);
+    leftTalonFront.config_kI(NumberConstants.kSlotIdx, NumberConstants.kGains.kI, NumberConstants.kTimeoutMs);
+    leftTalonFront.config_kD(NumberConstants.kSlotIdx, NumberConstants.kGains.kD, NumberConstants.kTimeoutMs);
+    rightTalonFront.selectProfileSlot(NumberConstants.kSlotIdx, NumberConstants.kPIDLoopIdx);
+    rightTalonFront.config_kF(NumberConstants.kSlotIdx, NumberConstants.kGains.kF, NumberConstants.kTimeoutMs);
+    rightTalonFront.config_kP(NumberConstants.kSlotIdx, NumberConstants.kGains.kP, NumberConstants.kTimeoutMs);
+    rightTalonFront.config_kI(NumberConstants.kSlotIdx, NumberConstants.kGains.kI, NumberConstants.kTimeoutMs);
+    rightTalonFront.config_kD(NumberConstants.kSlotIdx, NumberConstants.kGains.kD, NumberConstants.kTimeoutMs);
+
+    //acceleration and cruise velocity, robot won't surpass either of them
+    leftTalonFront.configMotionCruiseVelocity(4500, NumberConstants.kTimeoutMs);
+    leftTalonFront.configMotionAcceleration(2000, NumberConstants.kTimeoutMs);
+    leftTalonFront.configMotionSCurveStrength(8);
+    rightTalonFront.configMotionCruiseVelocity(4500, NumberConstants.kTimeoutMs);
+    rightTalonFront.configMotionAcceleration(2000, NumberConstants.kTimeoutMs);
+    rightTalonFront.configMotionSCurveStrength(8);
+
+    //zeroes the sensor
+    leftTalonFront.setSelectedSensorPosition(0, NumberConstants.kPIDLoopIdx, NumberConstants.kTimeoutMs);
+    rightTalonFront.setSelectedSensorPosition(0, NumberConstants.kPIDLoopIdx, NumberConstants.kTimeoutMs);
+  }
+
+  public void stop() {
+    drive(0,0,true);    
+  }
+  //normal driving
+  public void drive(double speed, double turn, boolean quickTurn) {
+    robotDrive.curvatureDrive(speed, turn/NumberConstants.TURNING_CONSTANT,quickTurn);
+    System.out.println("Right:"+rightTalonFront.getSelectedSensorPosition());
+    System.out.println("Left:"+leftTalonFront.getSelectedSensorPosition());
+  }
+  //motion profiling: moving in a straight line
+  public void moveForward(int distance){
+    rightTalonFront.set(ControlMode.MotionMagic, distance*NumberConstants.inch_to_ticks);
+    leftTalonFront.set(ControlMode.MotionMagic, distance*NumberConstants.inch_to_ticks);
+    //resets it to use again 
+    rightTalonFront.setSelectedSensorPosition(0);
+    leftTalonFront.setSelectedSensorPosition(0); 
+  }
+  //motion profiling: turning
+  public void turn(int degree){//degree is positive for a CW (right) turn
+    rightTalonFront.set(degree*NumberConstants.deg_to_ticks);
+    leftTalonFront.set(-1*degree*NumberConstants.deg_to_ticks);
+  }
+  @Override
+  public void initDefaultCommand() {
+  }
+}
